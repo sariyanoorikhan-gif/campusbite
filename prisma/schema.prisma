@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client"
+  importFileExtension = "js"
+  output = "../src/generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+}
+model User {
+  id String @id @default(uuid())
+  email String @unique
+  name String
+  rollNumber String
+  password String
+  role String @default("STUDENT")
+  createdAt DateTime @default(now())
+  orders Order[]
+  favorites Favorite[]
+  notifications Notification[]
+  checkouts Checkout[]
+}
+model Session {
+  id String @id
+  data Json
+  expiresAt DateTime
+  @@index([expiresAt])
+}
+model Category {
+  id String @id
+  name String @unique
+  items MenuItem[]
+}
+model MenuItem {
+  id String @id @default(uuid())
+  name String
+  description String
+  ingredients String
+  allergens String
+  price Int
+  image String
+  vegetarian Boolean @default(true)
+  prepMinutes Int @default(10)
+  available Boolean @default(true)
+  archived Boolean @default(false)
+  categoryId String
+  category Category @relation(fields:[categoryId], references:[id])
+  stock DailyStock[]
+  favorites Favorite[]
+  orderItems OrderItem[]
+}
+model DailyStock {
+  id String @id @default(uuid())
+  day String
+  remaining Int
+  menuItemId String
+  menuItem MenuItem @relation(fields:[menuItemId],references:[id])
+  @@unique([day,menuItemId])
+}
+model PickupSlot {
+  id String @id
+  startsAt DateTime
+  endsAt DateTime
+  capacity Int
+  reserved Int @default(0)
+  orders Order[]
+  checkouts Checkout[]
+  @@index([startsAt])
+}
+model Order {
+  id String @id @default(uuid())
+  number String @unique
+  userId String
+  user User @relation(fields:[userId],references:[id])
+  slotId String
+  slot PickupSlot @relation(fields:[slotId],references:[id])
+  status String @default("PLACED")
+  total Int
+  note String @default("")
+  pickupToken String @unique
+  tokenExpiresAt DateTime
+  idempotencyKey String
+  requestHash String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  items OrderItem[]
+  payment Payment?
+  history StatusHistory[]
+  checkout Checkout?
+  @@unique([userId,idempotencyKey])
+  @@index([userId,createdAt])
+  @@index([status,createdAt])
+}
+model OrderItem {
+  id String @id @default(uuid())
+  orderId String
+  order Order @relation(fields:[orderId],references:[id])
+  menuItemId String
+  menuItem MenuItem @relation(fields:[menuItemId],references:[id])
+  name String
+  unitPrice Int
+  quantity Int
+}
+model Payment {
+  id String @id @default(uuid())
+  orderId String @unique
+  order Order @relation(fields:[orderId],references:[id])
+  method String @default("PICKUP")
+  status String @default("PENDING")
+  amount Int
+  paidAt DateTime?
+  mode String @default("LEGACY")
+  reference String?
+  events PaymentEvent[]
+}
+model PaymentEvent {
+  id String @id @default(uuid())
+  paymentId String
+  payment Payment @relation(fields:[paymentId],references:[id])
+  actorId String
+  status String
+  createdAt DateTime @default(now())
+}
+model Favorite {
+  userId String
+  user User @relation(fields:[userId],references:[id])
+  menuItemId String
+  menuItem MenuItem @relation(fields:[menuItemId],references:[id])
+  @@id([userId,menuItemId])
+}
+model Notification {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields:[userId],references:[id])
+  message String
+  read Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+model StatusHistory {
+  id String @id @default(uuid())
+  orderId String
+  order Order @relation(fields:[orderId],references:[id])
+  status String
+  actorId String
+  reason String @default("")
+  createdAt DateTime @default(now())
+}
+model AuditLog {
+  id String @id @default(uuid())
+  actorId String
+  action String
+  targetId String
+  createdAt DateTime @default(now())
+}
+model CanteenSettings {
+  id String @id @default("main")
+  name String @default("The Campus Kitchen")
+  timezone String @default("Asia/Kolkata")
+  openMinute Int @default(480)
+  closeMinute Int @default(1320)
+  slotMinutes Int @default(15)
+  slotCapacity Int @default(15)
+  cutoffMinutes Int @default(5)
+  noShowMinutes Int @default(60)
+  open Boolean @default(true)
+  announcement String @default("Freshly made. Ready when you are.")
+}
+model Checkout {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields:[userId],references:[id])
+  slotId String
+  slot PickupSlot @relation(fields:[slotId],references:[id])
+  stockDay String
+  items Json
+  total Int
+  note String @default("")
+  state String @default("PENDING")
+  mode String
+  method String @default("UPI")
+  expiresAt DateTime
+  idempotencyKey String
+  requestHash String
+  gatewayOrderId String? @unique
+  gatewayTransactionId String? @unique
+  gatewayUrl String?
+  orderId String? @unique
+  order Order? @relation(fields:[orderId],references:[id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([userId,idempotencyKey])
+  @@index([state,expiresAt])
+}
+

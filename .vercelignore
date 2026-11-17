@@ -1,0 +1,10 @@
+.env
+.env.*
+.data
+node_modules
+work
+docs
+tests
+dist
+PRIVATE-ACCESS.txt
+.git

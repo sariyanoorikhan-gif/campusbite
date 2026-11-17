@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.data/
+work/
+src/generated/
+*.log
+
+.vercel/
+PRIVATE-ACCESS.txt
+
+.env.*
+!.env.example
+

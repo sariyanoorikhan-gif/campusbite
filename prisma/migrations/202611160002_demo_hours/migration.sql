@@ -1,0 +1,1 @@
+ALTER TABLE "CanteenSettings" ALTER COLUMN "closeMinute" SET DEFAULT 1320;
